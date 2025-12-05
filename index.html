@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Pro 3D</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <div id="tooltip"></div>
+    <button id="showPanelBtn" class="floating-btn" style="display:none;">☰ Menú</button>
+
+    <div id="controls">
+        <div class="panel-header">
+            <h3>Graph Pro</h3>
+            <div class="header-actions">
+                <button id="infoBtn" class="icon-btn" title="Ayuda">ℹ️</button>
+                <button id="screenshotBtn" class="icon-btn" title="Guardar Foto">📸</button>
+                <button id="collapseBtn" class="icon-btn" title="Ocultar Panel">◀</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <strong>1. Fuente de Datos:</strong>
+            <div class="radio-list">
+                <label><input type="radio" name="modo" value="halin" checked> Generar Halin</label>
+                <label><input type="radio" name="modo" value="preset"> Ejemplos</label>
+                <label><input type="radio" name="modo" value="custom"> Custom / Archivo</label>
+            </div>
+        </div>
+
+        <div id="halin-controls" class="control-group">
+            <label>Nodos: <input type="number" id="nodosInput" value="30" min="6"></label>
+            <button id="generarHalinBtn">Generar Estructura</button>
+            <div class="sub-controls" style="margin-top: 10px; border-top: 1px dashed #444; padding-top: 5px;">
+                <label style="font-size:0.8em">Altura: <input type="range" id="alturaRange" min="0" max="40" value="12"></label>
+                <label style="font-size:0.8em">Radio: <input type="range" id="radioRange" min="5" max="50" value="20"></label>
+            </div>
+        </div>
+
+        <div id="preset-controls" class="control-group" style="display: none;">
+            <select id="presetSelect">
+                <option value="haley">Caso Haley.txt</option>
+                <option value="petersen">Grafo Petersen</option>
+                <option value="grid">Rejilla 4x4</option>
+            </select>
+            <button id="analizarPresetBtn">Cargar Ejemplo</button>
+        </div>
+
+        <div id="custom-controls" class="control-group" style="display: none;">
+            <div class="file-actions">
+                <button id="exportBtn" class="small-btn">💾 Guarsdar</button>
+                <label class="small-btn file-upload">
+                    📂 Abrir
+                    <input type="file" id="fileInput" accept=".txt" style="display: none;">
+                </label>
+            </div>
+            <textarea id="customInput" rows="3" placeholder="1 2&#10;2 3"></textarea>
+            <button id="analizarCustomBtn">Visualizar</button>
+        </div>
+
+        <div id="analysis-section" class="control-group" style="display: none;">
+            <strong>2. Algoritmo MIS:</strong>
+            <div class="radio-list horizontal">
+                <label><input type="radio" name="heuristica" value="greedy" checked> Greedy</label>
+                <label><input type="radio" name="heuristica" value="leaves"> Hojas</label>
+            </div>
+
+            <div id="animation-controls" style="margin-top: 10px; border-top: 1px dashed #444; padding-top: 10px;">
+                <div class="playback-btns">
+                    <button id="playBtn">▶ Play</button>
+                    <button id="resetBtn">⏮ Reset</button>
+                </div>
+                <label style="font-size: 0.8em; margin-top:5px;">Velocidad: <input type="range" id="speedRange" min="10" max="1000" value="200"></label>
+                <div id="step-status" style="font-size: 0.8em; color: #4facfe; text-align: center; min-height: 1.2em;">Listo</div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <strong>3. Visualización:</strong>
+            <div class="toggle-list">
+                <label><input type="checkbox" id="bloomCheck" checked> Bloom ✨</label>
+                <label><input type="checkbox" id="labelsCheck"> Etiquetas 🏷️</label>
+                <label><input type="checkbox" id="rotateCheck" checked> Rotación 🔄</label>
+            </div>
+            
+            <div class="color-pickers">
+                <label>MIS: <input type="color" id="colorMIS" value="#00ff00"></label>
+                <label>Hoja: <input type="color" id="colorLeaf" value="#FFD700"></label>
+            </div>
+
+            <div id="metrics-box">
+                <div>Nodos: <span id="m-nodes">0</span></div>
+                <div>Aristas: <span id="m-edges">0</span></div>
+                <div>Grado Máx: <span id="m-degree">0</span></div>
+                <div>Densidad: <span id="m-density">0</span></div>
+                <div style="grid-column: span 2; color: #00ff00; border-top: 1px solid #555; margin-top:5px; padding-top:5px; text-align:center;">
+                    MIS: <span id="m-mis" style="font-size: 1.2em;">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Ayuda GraphViz Pro</h2>
+            <p>Herramienta avanzada para grafos.</p>
+            <ul>
+                <li><strong>Halin:</strong> Genera árboles con ciclo exterior. (Solo estructura, sin análisis MIS).</li>
+                <li><strong>MIS:</strong> Encuentra el Conjunto Independiente Máximo en los otros modos.</li>
+                <li><strong>Animación:</strong> Usa Play para ver el algoritmo paso a paso.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
